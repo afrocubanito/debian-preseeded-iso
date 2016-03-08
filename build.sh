@@ -24,13 +24,13 @@ which genisoimage > /dev/null || {
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]
 then
-    echo "Usage: $0 [debian.iso [debian-preseeded.iso [preseed.cfg]]]"
+    echo "Usage: $0 [hostname [debian.iso [debian-preseeded.iso [preseed.cfg]]]]"
 fi
 
-SOURCE="${1:-debian.iso}"
-DEST="${2:-debian-preseeded.iso}"
-PRESEED="${3:-preseed.cfg}"
-
+HOSTNAME="${1:-debian}"
+SOURCE="${2:-debian.iso}"
+DEST="${3:-debian-preseeded.iso}"
+PRESEED="${4:-preseed.cfg}"
 
 if [ ! -f "$SOURCE" ]
 then
@@ -56,15 +56,45 @@ echo "Extracting the iso..."
 7z x -o"$TMP" "$SOURCE" > /dev/null
 
 echo "Copying the preseed file..."
-cp "$PRESEED" "$TMP"
+cat "$PRESEED" | SUITE="jessie"  TARGETNAME=$HOSTNAME CREATEUSER=1 ./mo > "$TMP/preseed-jessie-autouser.cfg"
+cat "$PRESEED" | SUITE="stretch" TARGETNAME=$HOSTNAME CREATEUSER=1 ./mo > "$TMP/preseed-stretch-autouser.cfg"
+unset CREATEUSER
+cat "$PRESEED" | SUITE="jessie"  TARGETNAME=$HOSTNAME              ./mo > "$TMP/preseed-jessie-manualuser.cfg"
+cat "$PRESEED" | SUITE="stretch" TARGETNAME=$HOSTNAME              ./mo > "$TMP/preseed-stretch-manualuser.cfg"
+
+echo "Copying preseed data files..."
+cp -r preseed "$TMP"
 
 pushd "$TMP" > /dev/null
 echo "Update isolinux config..."
-# Replace timeout 0 by timeout 1 to quickly launch the installer
-sed -i -e 's/^timeout .*$/timeout 1/' isolinux/isolinux.cfg
-# Replace append preseed/file=/cdrom/preseed.cfg to the kernel command line
-#sed -i -e 's/^\(\s\+append .*\)\(---\)/\1preseed\/file=\/cdrom\/preseed.cfg \2/' isolinux/txt.cfg
-sed -i -e 's/^\(\s\+append .*\)\(---\)/\1auto=true file=\/cdrom\/preseed.cfg \2/' isolinux/txt.cfg
+
+cat >> isolinux/txt.cfg <<EOE
+label install-jessie-manualuser
+	menu label ^Install Jessie $HOSTNAME (manual user)
+	kernel /install.amd/vmlinuz
+	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-jessie-manualuser.cfg
+EOE
+
+cat >> isolinux/txt.cfg <<EOE
+label install-jessie-autouser
+	menu label ^Install Jessie $HOSTNAME (auto Valdor user)
+	kernel /install.amd/vmlinuz
+	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-jessie-autouser.cfg
+EOE
+
+cat >> isolinux/txt.cfg <<EOE
+label install-stretch-autouser
+	menu label ^Install Stretch $HOSTNAME (manual user)
+	kernel /install.amd/vmlinuz
+	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-stretch-manualuser.cfg
+EOE
+
+cat >> isolinux/txt.cfg <<EOE
+label install-stretch-autouser
+	menu label ^Install Stretch $HOSTNAME (auto Valdor user)
+	kernel /install.amd/vmlinuz
+	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-stretch-autouser.cfg
+EOE
 
 echo "Update the checksums..."
 find -follow -type f -print0 | xargs --null md5sum > md5sum.txt
