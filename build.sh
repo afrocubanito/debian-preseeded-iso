@@ -27,7 +27,8 @@ then
     echo "Usage: $0 [hostname [debian.iso [debian-preseeded.iso [preseed.cfg]]]]"
 fi
 
-HOSTNAME="${1:-debian}"
+TARGETNAME="${1:-debian}"
+TARGETDOMAIN="${2:-srv.inf3.ch}"
 SOURCE="${2:-debian.iso}"
 DEST="${3:-debian-preseeded.iso}"
 PRESEED="${4:-preseed.cfg}"
@@ -56,42 +57,44 @@ echo "Extracting the iso..."
 7z x -o"$TMP" "$SOURCE" > /dev/null
 
 echo "Copying the preseed file..."
-cat "$PRESEED" | SUITE="jessie"  TARGETNAME=$HOSTNAME CREATEUSER=1 ./mo > "$TMP/preseed-jessie-autouser.cfg"
-cat "$PRESEED" | SUITE="stretch" TARGETNAME=$HOSTNAME CREATEUSER=1 ./mo > "$TMP/preseed-stretch-autouser.cfg"
+cat "$PRESEED" | SUITE="jessie"  TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME CREATEUSER=1 ./mo > "$TMP/preseed-jessie-autouser.cfg"
+cat "$PRESEED" | SUITE="stretch" TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME CREATEUSER=1 ./mo > "$TMP/preseed-stretch-autouser.cfg"
 unset CREATEUSER
-cat "$PRESEED" | SUITE="jessie"  TARGETNAME=$HOSTNAME              ./mo > "$TMP/preseed-jessie-manualuser.cfg"
-cat "$PRESEED" | SUITE="stretch" TARGETNAME=$HOSTNAME              ./mo > "$TMP/preseed-stretch-manualuser.cfg"
+cat "$PRESEED" | SUITE="jessie"  TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME              ./mo > "$TMP/preseed-jessie-manualuser.cfg"
+cat "$PRESEED" | SUITE="stretch" TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME              ./mo > "$TMP/preseed-stretch-manualuser.cfg"
 
 echo "Copying preseed data files..."
-cp -r preseed "$TMP"
+mkdir "$TMP/preseed"
+cat "preseed/minion" | TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME ./mo > "$TMP/preseed/minion"
+
 
 pushd "$TMP" > /dev/null
 echo "Update isolinux config..."
 
 cat >> isolinux/txt.cfg <<EOE
 label install-jessie-manualuser
-	menu label ^Install Jessie $HOSTNAME (manual user)
+	menu label ^Install Jessie $TARGETNAME (manual user)
 	kernel /install.amd/vmlinuz
 	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-jessie-manualuser.cfg
 EOE
 
 cat >> isolinux/txt.cfg <<EOE
 label install-jessie-autouser
-	menu label ^Install Jessie $HOSTNAME (auto Valdor user)
+	menu label ^Install Jessie $TARGETNAME (auto Valdor user)
 	kernel /install.amd/vmlinuz
 	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-jessie-autouser.cfg
 EOE
 
 cat >> isolinux/txt.cfg <<EOE
 label install-stretch-autouser
-	menu label ^Install Stretch $HOSTNAME (manual user)
+	menu label ^Install Stretch $TARGETNAME (manual user)
 	kernel /install.amd/vmlinuz
 	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-stretch-manualuser.cfg
 EOE
 
 cat >> isolinux/txt.cfg <<EOE
 label install-stretch-autouser
-	menu label ^Install Stretch $HOSTNAME (auto Valdor user)
+	menu label ^Install Stretch $TARGETNAME (auto Valdor user)
 	kernel /install.amd/vmlinuz
 	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-stretch-autouser.cfg
 EOE

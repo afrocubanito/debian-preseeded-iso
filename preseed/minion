@@ -10,6 +10,9 @@
 # resolved, then the minion will fail to start.
 master: laverna.inf3.ch
 
+# Set the minion id with static information from the install preseed.
+id: {{TARGETNAME}}.{{TARGETDOMAIN}}
+
 # Set whether the minion should connect to the master via IPv6
 #ipv6: False
 
