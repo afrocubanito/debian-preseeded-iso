@@ -22,16 +22,51 @@ which genisoimage > /dev/null || {
     exit 127
 } > /dev/stderr
 
+TARGETNAME="debian"
+TARGETDOMAIN="srv.inf3.ch"
+SOURCE="debian.iso"
+DEST="debian-preseeded.iso"
+PRESEED="preseed.cfg"
+USER="valdor"
+
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]
 then
-    echo "Usage: $0 [hostname [debian.iso [debian-preseeded.iso [preseed.cfg]]]]"
+    echo "Usage: $0 [-h hostname ($TARGETNAME)] [-d domain ($TARGETDOMAIN)] [-i source ($SOURCE)] [-o output ($DEST)] [-p preseed file ($PRESEED)] [-u user ($USER)]" >&2
+    exit 0
 fi
 
-TARGETNAME="${1:-debian}"
-TARGETDOMAIN="${2:-srv.inf3.ch}"
-SOURCE="${2:-debian.iso}"
-DEST="${3:-debian-preseeded.iso}"
-PRESEED="${4:-preseed.cfg}"
+
+while getopts "h:d:i:o:p:u:" opt; do
+  case $opt in
+    h)
+      TARGETNAME=$OPTARG
+      ;;
+    d)
+      TARGETDOMAIN=$OPTARG
+      ;;
+    i)
+      SOURCE=$OPTARG
+      ;;
+    o)
+      DEST=$OPTARG
+      ;;
+    p)
+      PRESEED=$OPTARG
+      ;;
+    u)
+      USER=$OPTARG
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+
 
 if [ ! -f "$SOURCE" ]
 then
@@ -57,8 +92,8 @@ echo "Extracting the iso..."
 7z x -o"$TMP" "$SOURCE" > /dev/null
 
 echo "Copying the preseed file..."
-cat "$PRESEED" | SUITE="jessie"  TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME CREATEUSER=1 FULLUSER="Valdor65" USER="valdor" ./mo > "$TMP/preseed-jessie-autouser.cfg"
-cat "$PRESEED" | SUITE="stretch" TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME CREATEUSER=1 FULLUSER="Valdor65" USER="valdor" ./mo > "$TMP/preseed-stretch-autouser.cfg"
+cat "$PRESEED" | SUITE="jessie"  TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME CREATEUSER=1 FULLUSER=$USER USER=$USER ./mo > "$TMP/preseed-jessie-autouser.cfg"
+cat "$PRESEED" | SUITE="stretch" TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME CREATEUSER=1 FULLUSER=$USER USER=$USER ./mo > "$TMP/preseed-stretch-autouser.cfg"
 unset CREATEUSER FULLUSER USER
 cat "$PRESEED" | SUITE="jessie"  TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME                                                ./mo > "$TMP/preseed-jessie-manualuser.cfg"
 cat "$PRESEED" | SUITE="stretch" TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME                                                ./mo > "$TMP/preseed-stretch-manualuser.cfg"
