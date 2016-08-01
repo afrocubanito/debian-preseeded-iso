@@ -57,11 +57,11 @@ echo "Extracting the iso..."
 7z x -o"$TMP" "$SOURCE" > /dev/null
 
 echo "Copying the preseed file..."
-cat "$PRESEED" | SUITE="jessie"  TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME CREATEUSER=1 ./mo > "$TMP/preseed-jessie-autouser.cfg"
-cat "$PRESEED" | SUITE="stretch" TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME CREATEUSER=1 ./mo > "$TMP/preseed-stretch-autouser.cfg"
-unset CREATEUSER
-cat "$PRESEED" | SUITE="jessie"  TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME              ./mo > "$TMP/preseed-jessie-manualuser.cfg"
-cat "$PRESEED" | SUITE="stretch" TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME              ./mo > "$TMP/preseed-stretch-manualuser.cfg"
+cat "$PRESEED" | SUITE="jessie"  TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME CREATEUSER=1 FULLUSER="Valdor65" USER="valdor" ./mo > "$TMP/preseed-jessie-autouser.cfg"
+cat "$PRESEED" | SUITE="stretch" TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME CREATEUSER=1 FULLUSER="Valdor65" USER="valdor" ./mo > "$TMP/preseed-stretch-autouser.cfg"
+unset CREATEUSER FULLUSER USER
+cat "$PRESEED" | SUITE="jessie"  TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME                                                ./mo > "$TMP/preseed-jessie-manualuser.cfg"
+cat "$PRESEED" | SUITE="stretch" TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME                                                ./mo > "$TMP/preseed-stretch-manualuser.cfg"
 
 echo "Copying preseed data files..."
 mkdir "$TMP/preseed"
@@ -80,7 +80,7 @@ EOE
 
 cat >> isolinux/txt.cfg <<EOE
 label install-jessie-autouser
-	menu label ^Install Jessie $TARGETNAME (auto Valdor user)
+	menu label ^Install Jessie $TARGETNAME (auto user)
 	kernel /install.amd/vmlinuz
 	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-jessie-autouser.cfg
 EOE
@@ -94,7 +94,7 @@ EOE
 
 cat >> isolinux/txt.cfg <<EOE
 label install-stretch-autouser
-	menu label ^Install Stretch $TARGETNAME (auto Valdor user)
+	menu label ^Install Stretch $TARGETNAME (auto user)
 	kernel /install.amd/vmlinuz
 	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-stretch-autouser.cfg
 EOE
