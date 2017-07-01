@@ -106,6 +106,34 @@ cat "preseed/minion" | TARGETDOMAIN=$TARGETDOMAIN TARGETNAME=$TARGETNAME ./mo > 
 pushd "$TMP" > /dev/null
 echo "Update isolinux config..."
 
+perl -pi -e 's/timeout 0/timeout 150/' isolinux/*.cfg
+perl -pi -e 's/\s*menu default//' isolinux/*.cfg
+
+cat >> preseed-stretch-netboot.cfg <<EOC
+d-i debian-installer/language         string   en
+d-i debian-installer/country          string   GB
+d-i debian-installer/locale           string   en_GB.UTF-8
+d-i keyboard-configuration/xkb-keymap select   ch(fr)
+
+d-i netcfg/choose_interface           select   auto
+
+d-i netcfg/wireless_wep               string
+
+d-i netcfg/get_hostname               string   newdebian
+d-i netcfg/get_domain                 string
+
+d-i netcfg/get_nameservers            string
+d-i netcfg/get_ipaddress              string
+d-i netcfg/get_netmask                string   255.255.255.0
+d-i netcfg/get_gateway                string
+
+d-i preseed/early_command             string   anna-install network-console
+
+d-i network-console/password          password install
+d-i network-console/password-again    password install
+d-i network-console/start             select   continue
+EOC
+
 cat >> isolinux/txt.cfg <<EOE
 label install-jessie-manualuser
 	menu label ^Install Jessie $TARGETNAME (manual user)
@@ -132,6 +160,14 @@ label install-stretch-autouser
 	menu label ^Install Stretch $TARGETNAME (auto user)
 	kernel /install.amd/vmlinuz
 	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-stretch-autouser.cfg
+EOE
+
+cat >> isolinux/txt.cfg <<EOE
+label install-stretch-netinstall
+	menu label ^Install Stretch $TARGETNAME (netinstall)
+	menu default
+	kernel /install.amd/vmlinuz
+	append vga=788 initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed-stretch-netboot.cfg
 EOE
 
 echo "Update the checksums..."
